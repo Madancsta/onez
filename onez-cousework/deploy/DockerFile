@@ -1,2 +1,0 @@
-FROM tomcat:10.1.28-jdk17
-COPY ./yourproject.war /usr/local/tomcat/webapps/
