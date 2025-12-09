@@ -28,7 +28,7 @@
 <!-- header Begins -->
 <header>
     <div>
-        <a href="${contextPath}/home">
+        <a href="${contextPath}/">
             <img src="${contextPath}/resources/logo/onez.svg" alt="Logo">
         </a>
     </div>
