@@ -60,10 +60,17 @@ public class AuthenticationFilter implements Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
+    	
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse res = (HttpServletResponse) response;
 
         String uri = req.getRequestURI();
+
+	     // At the very top of doFilter, before auth checks
+        if (uri.startsWith(req.getContextPath() + "/WEB-INF/") || uri.startsWith(req.getContextPath() + "/resources/")) {
+            chain.doFilter(request, response);
+            return;
+        }
 
     	// Allow access to resources
  		if (uri.endsWith(".png") || uri.endsWith(".jpg") || uri.endsWith(".css") || uri.endsWith(".js") || uri.endsWith(".svg") || uri.endsWith(".jpeg")) {
