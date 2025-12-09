@@ -31,8 +31,8 @@ public class CartService {
      * @return A CartModel containing cart details, items, and totals.
      */
     public CartModel getCartByUserId(int userId) {
-        String cartQuery = "SELECT * FROM onez.cart WHERE user_id = ?";
-        String itemsQuery = "SELECT ci.*, p.* FROM onez.cartitem ci JOIN onez.product p ON ci.product_id = p.product_id WHERE ci.cart_id = ?";
+        String cartQuery = "SELECT * FROM railway.cart WHERE user_id = ?";
+        String itemsQuery = "SELECT ci.*, p.* FROM railway.cartitem ci JOIN railway.product p ON ci.product_id = p.product_id WHERE ci.cart_id = ?";
         
         CartModel cart = new CartModel();
         List<CartItemModel> items = new ArrayList<>();
@@ -155,14 +155,14 @@ public class CartService {
             if (cartId == 0) return false;
 
             // Delete all cart items
-            String deleteItems = "DELETE FROM onez.cartitem WHERE cart_id = ?";
+            String deleteItems = "DELETE FROM railway.cartitem WHERE cart_id = ?";
             try (PreparedStatement stmt = dbConn.prepareStatement(deleteItems)) {
                 stmt.setInt(1, cartId);
                 stmt.executeUpdate();
             }
 
             // Reset cart totals
-            String resetCart = "UPDATE onez.cart SET total_items = 0, total_price = 0 WHERE cart_id = ?";
+            String resetCart = "UPDATE railway.cart SET total_items = 0, total_price = 0 WHERE cart_id = ?";
             try (PreparedStatement stmt = dbConn.prepareStatement(resetCart)) {
                 stmt.setInt(1, cartId);
                 return stmt.executeUpdate() > 0;
@@ -183,7 +183,7 @@ public class CartService {
     private int getOrCreateCartId(int userId) throws SQLException {
         int cartId = getCartId(userId);
         if (cartId == 0) {
-            String query = "INSERT INTO onez.cart (user_id, total_items, total_price, createdAt) VALUES (?, 0, 0, ?)";
+            String query = "INSERT INTO railway.cart (user_id, total_items, total_price, createdAt) VALUES (?, 0, 0, ?)";
             try (PreparedStatement stmt = dbConn.prepareStatement(query, PreparedStatement.RETURN_GENERATED_KEYS)) {
                 stmt.setInt(1, userId);
                 stmt.setDate(2, Date.valueOf(LocalDate.now()));
@@ -199,7 +199,7 @@ public class CartService {
     }
 
     private int getCartId(int userId) throws SQLException {
-        String query = "SELECT cart_id FROM onez.cart WHERE user_id = ?";
+        String query = "SELECT cart_id FROM railway.cart WHERE user_id = ?";
         try (PreparedStatement stmt = dbConn.prepareStatement(query)) {
             stmt.setInt(1, userId);
             ResultSet rs = stmt.executeQuery();
@@ -214,7 +214,7 @@ public class CartService {
      */
 
     private CartItemModel getCartItem(int cartId, int productId) throws SQLException {
-        String query = "SELECT ci.*, p.* FROM onez.cartitem ci JOIN onez.product p ON ci.product_id = p.product_id " +
+        String query = "SELECT ci.*, p.* FROM railway.cartitem ci JOIN railway.product p ON ci.product_id = p.product_id " +
                       "WHERE ci.cart_id = ? AND ci.product_id = ?";
         try (PreparedStatement stmt = dbConn.prepareStatement(query)) {
             stmt.setInt(1, cartId);
@@ -249,7 +249,7 @@ public class CartService {
      * @return true if the insert is successful, false otherwise.
      */
     private boolean insertCartItem(int cartId, int productId, int quantity) throws SQLException {
-        String query = "INSERT INTO onez.cartitem (cart_id, product_id, productQuantity) VALUES (?, ?, ?)";
+        String query = "INSERT INTO railway.cartitem (cart_id, product_id, productQuantity) VALUES (?, ?, ?)";
         try (PreparedStatement stmt = dbConn.prepareStatement(query)) {
             stmt.setInt(1, cartId);
             stmt.setInt(2, productId);
@@ -265,7 +265,7 @@ public class CartService {
      * @return true if update is successful, false otherwise.
      */
     private boolean updateCartItemQuantity(int cartId, int productId, int newQuantity) throws SQLException {
-        String query = "UPDATE onez.cartitem SET productQuantity = ? WHERE cart_id = ? AND product_id = ?";
+        String query = "UPDATE railway.cartitem SET productQuantity = ? WHERE cart_id = ? AND product_id = ?";
         try (PreparedStatement stmt = dbConn.prepareStatement(query)) {
             stmt.setInt(1, newQuantity);
             stmt.setInt(2, cartId);
@@ -281,7 +281,7 @@ public class CartService {
      */
 
     private boolean deleteCartItem(int cartId, int productId) throws SQLException {
-        String query = "DELETE FROM onez.cartitem WHERE cart_id = ? AND product_id = ?";
+        String query = "DELETE FROM railway.cartitem WHERE cart_id = ? AND product_id = ?";
         try (PreparedStatement stmt = dbConn.prepareStatement(query)) {
             stmt.setInt(1, cartId);
             stmt.setInt(2, productId);
@@ -295,10 +295,10 @@ public class CartService {
      * @param cartId ID of the cart to update.
      */
     private void updateCartTotals(int cartId) throws SQLException {
-        String query = "UPDATE onez.cart c SET " +
-                      "total_items = (SELECT COALESCE(SUM(productQuantity), 0) FROM onez.cartitem WHERE cart_id = ?), " +
+        String query = "UPDATE railway.cart c SET " +
+                      "total_items = (SELECT COALESCE(SUM(productQuantity), 0) FROM railway.cartitem WHERE cart_id = ?), " +
                       "total_price = (SELECT COALESCE(SUM(p.price * ci.productQuantity), 0) " +
-                      "FROM onez.cartitem ci JOIN onez.product p ON ci.product_id = p.product_id WHERE ci.cart_id = ?) " +
+                      "FROM railway.cartitem ci JOIN railway.product p ON ci.product_id = p.product_id WHERE ci.cart_id = ?) " +
                       "WHERE c.cart_id = ?";
         
         try (PreparedStatement stmt = dbConn.prepareStatement(query)) {
