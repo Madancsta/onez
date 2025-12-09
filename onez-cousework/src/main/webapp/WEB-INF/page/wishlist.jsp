@@ -67,7 +67,7 @@ pageContext.setAttribute("currentUser", currentUser);
                                             
                                         </td>
                                         <td class="product-price">
-                                            <fmt:formatNumber value="${product.price}" type="currency" />
+                                            Rs. <fmt:formatNumber value="${product.price}"/>
                                         </td>
                                         <td class="stock-status">
                                             <c:choose>

@@ -75,7 +75,7 @@
             <a href="${contextPath}/viewCategory?category=Storage">
                 <div><i class="fa-solid fa-hard-drive"></i></div>
             </a>
-            <a href="${contextPath}/viewCategory?category=Accessories">
+            <a href="${contextPath}/viewCategory?category=Other">
                 <div><i class="fa-solid fa-ellipsis"></i></div>
             </a>
         </div>

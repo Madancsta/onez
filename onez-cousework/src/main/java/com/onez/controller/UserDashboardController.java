@@ -20,7 +20,7 @@ import com.onez.util.RedirectionUtil;
  * UserDashboardController is responsible for handling profile requests. It interacts with
  * the UserDashboardService to manipulate the logged user details.
  */
-@WebServlet(asyncSupported = true, urlPatterns = { "/userDashboard" })
+@WebServlet(asyncSupported = true, urlPatterns = "/userDashboard" )
 @MultipartConfig(
     fileSizeThreshold = 1024 * 1024 * 1,  // 1 MB
     maxFileSize = 1024 * 1024 * 10,       // 10 MB
@@ -148,6 +148,7 @@ public class UserDashboardController extends HttpServlet {
             request.getSession().setAttribute("errorMessage", "Something went wrong. Please check your inputs.");
         }
 
+        
         response.sendRedirect(request.getContextPath() + "/userDashboard");
     }
 

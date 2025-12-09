@@ -60,7 +60,7 @@
                                                 </div>
                                             </div>
                                             <div class="item-price">
-                                                $<fmt:formatNumber value="${item.product.price * item.productQuantity}" 
+                                                Rs. <fmt:formatNumber value="${item.product.price * item.productQuantity}" 
                                                                     minFractionDigits="2" maxFractionDigits="2"/>
                                             </div>
                                         </div>
