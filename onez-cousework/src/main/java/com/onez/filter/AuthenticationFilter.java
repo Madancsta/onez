@@ -15,128 +15,135 @@ import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-@WebFilter(asyncSupported = true, urlPatterns = { "/*" })
+@WebFilter("/*")
 public class AuthenticationFilter implements Filter {
 
-    private static final String LOGIN = "/login";
-    private static final String REGISTER = "/register";
-    private static final String HOME = "/home";
-    private static final String CATEGORY = "/viewCategory";
-    private static final String DESCRIPTION = "/viewProduct";
-    private static final String SEARCH = "/search";
-    private static final String ROOT = "/";
-    private static final String ORDER = "/order";
-    private static final String ADD_ORDER = "/order-history";
-    private static final String PROCESS_ORDER = "/processOrder";
-    private static final String CART = "/cart";
-    private static final String CARTADD = "/cart/add";
-    private static final String CARTUPDATE = "/cart/update";
-    private static final String CARTREMOVE = "/cart/remove";
-    private static final String WISHLIST = "/wishlist";
-    private static final String WISHLIST_ADD = "/wishlist/add";
-    private static final String WISHLIST_DELETE = "/wishlist/remove";
-    
-    private static final String ORDER_HISTORY = "/orderHistory";
-    private static final String ORDER_DELETE = "/orderHistory/delete";
-    private static final String USER_DASHBOARD = "/userDashboard";
-    private static final String ADMIN_DASHBOARD = "/adminDashboard";
-    private static final String PRODUCT = "/products";
-    private static final String ORDERS = "/admin/orders";
-    private static final String MODIFY_USERS = "/modifyUsers";
-    private static final String ABOUTUS = "/aboutUs";
-    private static final String CONTACT = "/contact";
-    private static final String PRIVACY = "/privacy";
-    private static final String RETURN = "/return";
-    private static final String TERMS = "/terms";
-    private static final String WARRANTY = "/warranty";
-
-
-    
     @Override
-    public void init(FilterConfig filterConfig) throws ServletException {
-    	// Initialization logic, if required
-    }
+    public void init(FilterConfig filterConfig) throws ServletException {}
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
-    	
+
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse res = (HttpServletResponse) response;
 
         String uri = req.getRequestURI();
+        String ctx = req.getContextPath();   // usually "" on cloud
+        String path = uri.substring(ctx.length());  // normalized path
 
-	     // At the very top of doFilter, before auth checks
-        if (uri.startsWith(req.getContextPath() + "/WEB-INF/") || uri.startsWith(req.getContextPath() + "/resources/")) {
+        // ------------------------------------------------------------
+        // 1. ALLOW STATIC RESOURCES
+        // ------------------------------------------------------------
+        if (path.startsWith("/css") ||
+            path.startsWith("/js") ||
+            path.startsWith("/images") ||
+            path.startsWith("/resources") ||
+            path.startsWith("/WEB-INF") ||    // required for JSP internal forwards
+            path.matches(".*\\.(png|jpg|jpeg|svg|css|js|ico)$")) {
+
             chain.doFilter(request, response);
             return;
         }
 
-    	// Allow access to resources
- 		if (uri.endsWith(".png") || uri.endsWith(".jpg") || uri.endsWith(".css") || uri.endsWith(".js") || uri.endsWith(".svg") || uri.endsWith(".jpeg")) {
- 			chain.doFilter(request, response);
- 			return;
- 		}
+        // ------------------------------------------------------------
+        // 2. ALLOW HOME ROOT REQUESTS
+        // ------------------------------------------------------------
+        if (path.equals("") ||     // example: contextPath = ""
+            path.equals("/") ||
+            path.equals("/home")) {
 
- 		if (uri.endsWith("/logout")) {
             chain.doFilter(request, response);
             return;
         }
- 		
+
+        // ------------------------------------------------------------
+        // 3. ALWAYS ALLOW LOGOUT
+        // ------------------------------------------------------------
+        if (path.equals("/logout")) {
+            chain.doFilter(request, response);
+            return;
+        }
+
+        // ------------------------------------------------------------
+        // 4. CHECK LOGIN + ROLE
+        // ------------------------------------------------------------
         boolean isLoggedIn = SessionUtil.getAttribute(req, "username") != null;
-        
-        String userRole;
-        
-        if (isLoggedIn) {
-        	userRole = CookieUtil.getCookie(req, "role") != null ? CookieUtil.getCookie(req, "role").getValue(): null;
-	        if ("admin".equals(userRole)) {
-				// Admin is logged in
-				if (uri.endsWith(LOGIN) || uri.endsWith(REGISTER)) {
-					res.sendRedirect(req.getContextPath() + ADMIN_DASHBOARD);
-				} else if (uri.endsWith(ADMIN_DASHBOARD) || uri.endsWith(MODIFY_USERS) || uri.endsWith(PRODUCT)
-						|| uri.endsWith(ORDERS) || uri.endsWith(HOME) || uri.endsWith(ROOT)
-						|| uri.endsWith(CATEGORY) || uri.endsWith(DESCRIPTION) || uri.endsWith(SEARCH) 
-						|| uri.endsWith(ABOUTUS)|| uri.endsWith(CONTACT)|| uri.endsWith(PRIVACY)|| 
-						uri.endsWith(RETURN) || uri.endsWith(TERMS)|| uri.endsWith(WARRANTY)) {
-					chain.doFilter(request, response);
-				} else if (uri.endsWith(ORDER) || uri.endsWith(CART) || uri.endsWith(WISHLIST) || uri.endsWith(ORDER_HISTORY) || uri.endsWith(USER_DASHBOARD)) {
-					res.sendRedirect(req.getContextPath() + ADMIN_DASHBOARD);
-				} else {
-					res.sendRedirect(req.getContextPath() + ADMIN_DASHBOARD);
-				}
-			} else if ("customer".equals(userRole)) {
-				// User is logged in
-				if (uri.endsWith(LOGIN) || uri.endsWith(REGISTER)) {
-					res.sendRedirect(req.getContextPath() + HOME);
-				} else if (uri.endsWith(HOME) || uri.endsWith(ROOT) || uri.endsWith(ORDER) || uri.endsWith(ADD_ORDER)|| uri.endsWith(PROCESS_ORDER)
-						|| uri.endsWith(CART) || uri.endsWith(CARTADD) || uri.endsWith(CARTREMOVE) || uri.endsWith(CARTUPDATE) | uri.endsWith(USER_DASHBOARD) 
-						|| uri.endsWith(ORDER_HISTORY) || uri.endsWith(WISHLIST)|| uri.endsWith(WISHLIST_ADD)|| uri.endsWith(WISHLIST_DELETE)||
-						uri.endsWith(CATEGORY) || uri.endsWith(DESCRIPTION) || uri.endsWith(SEARCH) || uri.endsWith(ORDER_DELETE)
-						|| uri.endsWith(ABOUTUS)|| uri.endsWith(CONTACT)|| uri.endsWith(PRIVACY)|| 
-						uri.endsWith(RETURN) || uri.endsWith(TERMS)|| uri.endsWith(WARRANTY)) {
-					chain.doFilter(request, response);
-				} else if (uri.endsWith(ADMIN_DASHBOARD) || uri.endsWith(MODIFY_USERS) || uri.endsWith(PRODUCT)
-						|| uri.endsWith(ORDERS)) {
-					res.sendRedirect(req.getContextPath() + HOME);
-				} else {
-					res.sendRedirect(req.getContextPath() + HOME);
-				}
-			} 
-        }else{
-			// Not logged in
-			if (uri.endsWith(LOGIN) || uri.endsWith(REGISTER) || uri.endsWith(HOME) || uri.endsWith(ROOT) || 
-					uri.endsWith(CATEGORY) || uri.endsWith(DESCRIPTION) || uri.endsWith(SEARCH)
-					|| uri.endsWith(ABOUTUS)|| uri.endsWith(CONTACT)|| uri.endsWith(PRIVACY)|| uri.endsWith(RETURN)
-					|| uri.endsWith(TERMS)|| uri.endsWith(WARRANTY)) {
-				chain.doFilter(request, response);
-			} else {
-				res.sendRedirect(req.getContextPath() + LOGIN);
-			}
-		}
-	}
+
+        String role = CookieUtil.getCookie(req, "role") != null
+                ? CookieUtil.getCookie(req, "role").getValue()
+                : null;
+
+        // ------------------------------------------------------------
+        // 5. PUBLIC PAGES
+        // ------------------------------------------------------------
+        if (path.equals("/login") ||
+            path.equals("/register") ||
+            path.equals("/aboutUs") ||
+            path.equals("/contact") ||
+            path.equals("/privacy") ||
+            path.equals("/return") ||
+            path.equals("/terms") ||
+            path.equals("/warranty") ||
+            path.startsWith("/search") ||
+            path.startsWith("/viewCategory") ||
+            path.startsWith("/viewProduct")) {
+
+            chain.doFilter(request, response);
+            return;
+        }
+
+        // ------------------------------------------------------------
+        // 6. NOT LOGGED IN → redirect to login
+        // ------------------------------------------------------------
+        if (!isLoggedIn) {
+            res.sendRedirect(ctx + "/login");
+            return;
+        }
+
+        // ------------------------------------------------------------
+        // 7. ADMIN ACCESS RULES
+        // ------------------------------------------------------------
+        if ("admin".equals(role)) {
+            if (path.startsWith("/adminDashboard") ||
+                path.startsWith("/modifyUsers") ||
+                path.startsWith("/products") ||
+                path.startsWith("/admin/orders")) {
+
+                chain.doFilter(request, response);
+                return;
+            } else {
+                res.sendRedirect(ctx + "/adminDashboard");
+                return;
+            }
+        }
+
+        // ------------------------------------------------------------
+        // 8. CUSTOMER ACCESS RULES
+        // ------------------------------------------------------------
+        if ("customer".equals(role)) {
+            if (path.startsWith("/userDashboard") ||
+                path.startsWith("/order") ||
+                path.startsWith("/order-history") ||
+                path.startsWith("/processOrder") ||
+                path.startsWith("/cart") ||
+                path.startsWith("/wishlist") ||
+                path.startsWith("/orderHistory")) {
+
+                chain.doFilter(request, response);
+                return;
+            } else {
+                res.sendRedirect(ctx + "/home");
+                return;
+            }
+        }
+
+        // ------------------------------------------------------------
+        // 9. DEFAULT → allow
+        // ------------------------------------------------------------
+        chain.doFilter(request, response);
+    }
 
     @Override
-    public void destroy() {
-    	// Cleanup logic, if required
-    }
+    public void destroy() {}
 }
